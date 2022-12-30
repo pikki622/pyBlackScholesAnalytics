@@ -109,7 +109,7 @@ class NumericGreeks:
         kwargs.pop("sigma", None)
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 0.01
+        rescaling_factor = kwargs.get("factor", 0.01)
 
         return (self.f(sigma=sigma0 + self.get_epsilon(), **kwargs) - self.f(sigma=sigma0 - self.get_epsilon(),
                                                                              **kwargs)) / (
@@ -130,7 +130,7 @@ class NumericGreeks:
         kwargs.pop("tau", None)
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 1.0 / 365.0
+        rescaling_factor = kwargs.get("factor", 1.0 / 365.0)
 
         return -((self.f(tau=tau0 + self.get_epsilon(), **kwargs) - self.f(tau=tau0 - self.get_epsilon(), **kwargs)) / (
                     2 * self.get_epsilon())) * rescaling_factor
@@ -150,7 +150,7 @@ class NumericGreeks:
         kwargs.pop("r", None)
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 0.01
+        rescaling_factor = kwargs.get("factor", 0.01)
 
         return ((self.f(r=r0 + self.get_epsilon(), **kwargs) - self.f(r=r0 - self.get_epsilon(), **kwargs)) / (
                     2 * self.get_epsilon())) * rescaling_factor

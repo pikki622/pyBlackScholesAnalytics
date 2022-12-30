@@ -37,10 +37,7 @@ def scalarize(x):
     Reduce array x to scalar, if possible.
     """
 
-    if is_iterable_not_string(x) and x.size == 1:
-        return x.item()
-    else:
-        return x
+    return x.item() if is_iterable_not_string(x) and x.size == 1 else x
 
 
 # -----------------------------------------------------------------------------#
@@ -56,7 +53,7 @@ def iterable_to_numpy_array(x, sort=True, sort_func=None, reverse_order=False):
 
     if is_iterable_not_string(x) and test_same_type(x):
         if not isinstance(x, np.ndarray):
-            x = np.array([xi for xi in x])
+            x = np.array(list(x))
         return np.array(sorted(x, key=sort_func, reverse=reverse_order)) if sort else x
     else:
         return x
@@ -119,7 +116,7 @@ def coordinate(x, y, *args, x_name="x", y_name="y", others_scalar={}, others_vec
         if p_name not in coordinated_parameters:
             coordinated_parameters[p_name] = coord_p_scal
         else:
-            raise KeyError("Duplicate parameter name: {}".format(p_name))
+            raise KeyError(f"Duplicate parameter name: {p_name}")
 
     # coordinate each other vector parameter p_vec (if any) with coord_x
     for p_name in others_vector:
@@ -131,8 +128,9 @@ def coordinate(x, y, *args, x_name="x", y_name="y", others_scalar={}, others_vec
             try:
                 coord_p_vec = coord_p_vec.reshape(coord_x.shape)
             except ValueError:
-                raise ValueError("Cannot reshape parameter '{}' of shape {} into shape {} of parameter '{}'"
-                                 .format(p_name, coord_p_vec.shape, coord_x.shape, x_name))
+                raise ValueError(
+                    f"Cannot reshape parameter '{p_name}' of shape {coord_p_vec.shape} into shape {coord_x.shape} of parameter '{x_name}'"
+                )
 
         # if parameters should be pd.DataFrame, recast
         if (not np_output) and (not isinstance(coord_p_vec, pd.DataFrame)):
@@ -143,7 +141,7 @@ def coordinate(x, y, *args, x_name="x", y_name="y", others_scalar={}, others_vec
         if p_name not in coordinated_parameters:
             coordinated_parameters[p_name] = coord_p_vec
         else:
-            raise KeyError("Duplicate parameter name: {}".format(p_name))
+            raise KeyError(f"Duplicate parameter name: {p_name}")
 
     # return output dictionary of coordinated parameters
     return coordinated_parameters
@@ -169,16 +167,15 @@ def coordinate_y_with_x(x, y, np_output):
             y_coord_x = y + np.zeros_like(x)
         else:
             raise TypeError(
-                r"Inconsistent type of \n x={} \n parameter in input: \n type(x)={} (np.ndarray expected)"
-                .format(x, type(x)))
-    else:
-        if isinstance(x, pd.DataFrame):
-            y_coord_x = pd.DataFrame(data=y, index=x.index, columns=x.columns)
+                f"Inconsistent type of \n x={x} \n parameter in input: \n type(x)={type(x)} (np.ndarray expected)"
+            )
+    elif isinstance(x, pd.DataFrame):
+        y_coord_x = pd.DataFrame(data=y, index=x.index, columns=x.columns)
 
-        else:
-            raise TypeError(
-                r"Inconsistent type of \n x={} \n parameter in input: \n type(x)={} (pd.DataFrame expected)"
-                .format(x, type(x)))
+    else:
+        raise TypeError(
+            f"Inconsistent type of \n x={x} \n parameter in input: \n type(x)={type(x)} (pd.DataFrame expected)"
+        )
     return y_coord_x
 
 
@@ -362,11 +359,13 @@ def test_dim(iterable_obj, dim=1):
 
     try:
         if iterable_obj.ndim != dim:
-            raise ValueError("Iterable obj: {} has dimension={}; expected dimension={}"
-                             .format(iterable_obj, iterable_obj.ndim, dim))
+            raise ValueError(
+                f"Iterable obj: {iterable_obj} has dimension={iterable_obj.ndim}; expected dimension={dim}"
+            )
     except AttributeError:
-        raise AttributeError("Iterable obj: {} of type {} has no attribute 'ndim'"
-                             .format(iterable_obj, type(iterable_obj)))
+        raise AttributeError(
+            f"Iterable obj: {iterable_obj} of type {type(iterable_obj)} has no attribute 'ndim'"
+        )
 
 
 # -----------------------------------------------------------------------------#
@@ -380,12 +379,13 @@ def test_same_type(iterable_obj):
     # includes all and only the different types of the elements in iterable_obj.
     # If its length is 1, then all the elements of iterable_obj are of the 
     # same data-type
-    if len(set([type(x) for x in iterable_obj])) == 1:
+    if len({type(x) for x in iterable_obj}) == 1:
         # all element are of the same type: test successful!
         return True
     else:
-        raise TypeError("Iterable '{}' in input has elements of heterogeneous types: {}"
-                        .format(iterable_obj, [type(x) for x in iterable_obj]))
+        raise TypeError(
+            f"Iterable '{iterable_obj}' in input has elements of heterogeneous types: {[type(x) for x in iterable_obj]}"
+        )
 
 
 # -----------------------------------------------------------------------------#
@@ -415,11 +415,15 @@ def test_valid_format(date_string, date_format="%d-%m-%Y"):
             pd.to_datetime(date_string, format=date_format, errors='raise')
         else:
             # neither an Iterable, nor a String: raise TypeError
-            raise TypeError("Type {} of date_string {} not recognized".format(type(date_string), date_string))
+            raise TypeError(
+                f"Type {type(date_string)} of date_string {date_string} not recognized"
+            )
 
     except ValueError:
         # not conform to date_format: raise ValueError
-        raise ValueError("date_string {} in input is not conform to 'dd-mm-YYYY' date format".format(date_string))
+        raise ValueError(
+            f"date_string {date_string} in input is not conform to 'dd-mm-YYYY' date format"
+        )
     else:
         # conform to date_format: test successful!
         return True
@@ -440,7 +444,7 @@ def datetime_obj_to_date_string(date):
             from Iterable --> to List of 'dd-mm-YYYY' String
     """
 
-    if isinstance(date, dt.datetime) or isinstance(date, pd.DatetimeIndex):
+    if isinstance(date, (dt.datetime, pd.DatetimeIndex)):
         # .strftime() is a polymorphic method, implemented by both 
         # datetime objects of datetime (1-dim) and DatetimeIndex (Multi-dim) objects of Pandas 
         # so there is no need to differentiate between the two case when calling it
@@ -520,9 +524,9 @@ def is_numeric(x):
     if is_iterable_not_string(x) and test_same_type(x):
         # since all elements are of the same type, 
         # it's enough to check the first element
-        return isinstance(x[0], float) or isinstance(x[0], int)
+        return isinstance(x[0], (float, int))
     else:
-        return isinstance(x, float) or isinstance(x, int)
+        return isinstance(x, (float, int))
 
 
 # -----------------------------------------------------------------------------#
@@ -557,12 +561,12 @@ def plot_compare(x, f, f_ref, **kwargs):
     """
 
     # parsing optional parameters
-    f_label = kwargs['f_label'] if 'f_label' in kwargs else "f"
-    f_ref_label = kwargs['f_ref_label'] if 'f_ref_label' in kwargs else "f_ref"
-    title = kwargs['title'] if 'title' in kwargs else "f Vs f_ref comparison"
-    x_label = kwargs['x_label'] if 'x_label' in kwargs else "x"
-    top_left_subtitle = kwargs['f_test_name'] if 'f_test_name' in kwargs else "Test function"
-    top_right_subtitle = kwargs['f_ref_name'] if 'f_ref_name' in kwargs else "Reference function"
+    f_label = kwargs.get('f_label', "f")
+    f_ref_label = kwargs.get('f_ref_label', "f_ref")
+    title = kwargs.get('title', "f Vs f_ref comparison")
+    x_label = kwargs.get('x_label', "x")
+    top_left_subtitle = kwargs.get('f_test_name', "Test function")
+    top_right_subtitle = kwargs.get('f_ref_name', "Reference function")
 
     # define the figure
     fig, axs = plt.subplots(figsize=(17, 10), nrows=3, ncols=2)
@@ -635,13 +639,13 @@ def plot(x, f, **kwargs):
     """
 
     # parsing optional parameters
-    x_label = kwargs['x_label'] if 'x_label' in kwargs else r"$x$"
-    f_label = kwargs['f_label'] if 'f_label' in kwargs else "f"
-    title = kwargs['title'] if 'title' in kwargs else "f(x) Vs x"
-    f_up = kwargs['f_up'] if 'f_up' in kwargs else None
-    f_up_label = kwargs['f_up_label'] if 'f_up_label' in kwargs else 'f_up_label'
-    f_down = kwargs['f_down'] if 'f_down' in kwargs else None
-    f_down_label = kwargs['f_down_label'] if 'f_down_label' in kwargs else 'f_down_label'
+    x_label = kwargs.get('x_label', r"$x$")
+    f_label = kwargs.get('f_label', "f")
+    title = kwargs.get('title', "f(x) Vs x")
+    f_up = kwargs.get('f_up')
+    f_up_label = kwargs.get('f_up_label', 'f_up_label')
+    f_down = kwargs.get('f_down')
+    f_down_label = kwargs.get('f_down_label', 'f_down_label')
 
     # define the figure
     fig, ax = plt.subplots(figsize=(10, 6))

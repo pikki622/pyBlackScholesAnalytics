@@ -168,12 +168,21 @@ def main():
         print("\n" + case_info + "\n")
 
         print("Parameters:")
-        print("S: {}".format(param_dict["S"] if "S" in param_dict else str(option.get_S()) + " (default)"))
-        print("K: {}".format(param_dict["K"] if "K" in param_dict else str(option.get_K()) + " (default)"))
-        print("t: {}".format(param_dict["t"] if "t" in param_dict else str(option.get_tau()) + " (default)"))
-        print("sigma: {}".format(
-            param_dict["sigma"] if "sigma" in param_dict else str(option.get_sigma()) + " (default)"))
-        print("r: {}\n".format(param_dict["r"] if "r" in param_dict else str(option.get_r()) + " (default)"))
+        print(
+            f'S: {param_dict["S"] if "S" in param_dict else f"{str(option.get_S())} (default)"}'
+        )
+        print(
+            f'K: {param_dict["K"] if "K" in param_dict else f"{str(option.get_K())} (default)"}'
+        )
+        print(
+            f't: {param_dict["t"] if "t" in param_dict else f"{str(option.get_tau())} (default)"}'
+        )
+        print(
+            f'sigma: {param_dict["sigma"] if "sigma" in param_dict else f"{str(option.get_sigma())} (default)"}'
+        )
+        print(
+            f'r: {param_dict["r"] if "r" in param_dict else f"{str(option.get_r())} (default)"}\n'
+        )
 
         print("Metrics:")
         print("Payoff:\n", option.payoff(**param_dict))
@@ -190,7 +199,7 @@ def main():
         # Implied volatility calculation is not implemented for x-axis (columns) 
         # spanned by parameters different from S or K (like sigma or r)
         if not_sigma_axis and not_r_axis:
-            print("\nExpected Implied Volatility: \n{}\n".format(option.get_sigma()))
+            print(f"\nExpected Implied Volatility: \n{option.get_sigma()}\n")
             print("\nImplied Volatility - Newton method:\n{}\n".format(option.implied_volatility(**param_dict)))
             param_dict["minimization_method"] = "Least-Squares"
             print("\nImplied Volatility - Least-Squares constrained method:\n{}\n"

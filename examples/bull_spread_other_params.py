@@ -55,27 +55,22 @@ def get_azimut_angle(parameter_name):
 
 
 def get_time_parameter(option, kind='date'):
-    # date time-parameter
-    if kind == 'date':
+    if kind != 'date':
+        # time-parameter as a list of times-to-maturity
+        return [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
-        # valuation date of the option
-        emission_date = option.get_t()
+    # valuation date of the option
+    emission_date = option.get_t()
 
-        # emission/expiration date of the option
-        expiration_date = option.get_T()
+    # emission/expiration date of the option
+    expiration_date = option.get_T()
 
         # time-parameter as a date-range of 5 valuation dates between t and T-10d
-        time_parameter = pd.date_range(start=emission_date,
-                                       end=expiration_date - pd.Timedelta(days=20),
-                                       periods=5)
-
-    # time-to-maturity time parameter    
-    else:
-
-        # time-parameter as a list of times-to-maturity
-        time_parameter = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-
-    return time_parameter
+    return pd.date_range(
+        start=emission_date,
+        end=expiration_date - pd.Timedelta(days=20),
+        periods=5,
+    )
 
 
 def main():
@@ -122,7 +117,7 @@ def main():
         # select metrics to plot
         for plot_metrics in ["price", "PnL", "delta", "theta", "gamma", "vega", "rho"]:
 
-            plot_details_flag = True if plot_metrics == "price" else False
+            plot_details_flag = plot_metrics == "price"
 
             # Bull-Spread price plot
             bull_spread_ptf_plotter.plot(**x_axis_dict, t='01-06-2020', plot_metrics=plot_metrics,

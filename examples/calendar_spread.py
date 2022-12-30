@@ -64,7 +64,7 @@ def main():
 
     # select metrics to plot
     for plot_metrics in ["price", "PnL", "delta", "theta", "gamma", "vega", "rho"]:
-        plot_details_flag = True if plot_metrics == "price" else False
+        plot_details_flag = plot_metrics == "price"
 
         # time-parameter as a date-range of 5 valuation dates between t and T_short
         # being the Calendar-Spread a multi-horizon portfolio, time-to-maturity

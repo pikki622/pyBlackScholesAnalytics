@@ -328,11 +328,11 @@ def main():
         print("\n" + case_info + "\n")
 
         print("Parameters:")
-        print("S: {}".format(param_dict["S"]))
-        print("K: {}".format(param_dict["K"]))
-        print("t: {}".format(param_dict["t"]))
-        print("sigma: {}".format(param_dict["sigma"]))
-        print("r: {}\n".format(param_dict["r"]))
+        print(f'S: {param_dict["S"]}')
+        print(f'K: {param_dict["K"]}')
+        print(f't: {param_dict["t"]}')
+        print(f'sigma: {param_dict["sigma"]}')
+        print(f'r: {param_dict["r"]}\n')
 
         print("Metrics:")
         print("Payoff:\n", option.payoff(**param_dict))
@@ -349,7 +349,7 @@ def main():
         # Implied volatility calculation is not implemented for x-axis 
         # (columns) spanned by sigma
         if ('sigma_axis' not in param_dict) or (param_dict['sigma_axis'] is False):
-            print("\nExpected Implied Volatility: \n{}\n".format(param_dict["sigma"]))
+            print(f'\nExpected Implied Volatility: \n{param_dict["sigma"]}\n')
 
             print("\nImplied Volatility - Newton method:\n{}\n".format(option.implied_volatility(**param_dict)))
 

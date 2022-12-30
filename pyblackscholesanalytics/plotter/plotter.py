@@ -116,27 +116,22 @@ class Plotter:
         x = None
 
         # case 1: x-axis = S
-        if len(args) > 0 or 'S' in kwargs:
+        if args:
             x_name = 'S'
-            if len(args) > 0:
-                x = args[0]
-            elif 'S' in kwargs:
-                x = kwargs[x_name]
+            x = args[0]
+        elif 'S' in kwargs:
+            x_name = 'S'
+            x = kwargs[x_name]
 
-        # other cases
-        else:
-            # case 2: x-axis = K
-            if 'K' in kwargs:
-                x_name = 'K'
-                x = kwargs[x_name]
-            # case 3: x-axis = sigma
-            elif 'sigma' in kwargs:
-                x_name = 'sigma'
-                x = kwargs[x_name]
-            # case 4: x-axis = r
-            elif 'r' in kwargs:
-                x_name = 'r'
-                x = kwargs[x_name]
+        elif 'K' in kwargs:
+            x_name = 'K'
+            x = kwargs[x_name]
+        elif 'sigma' in kwargs:
+            x_name = 'sigma'
+            x = kwargs[x_name]
+        elif 'r' in kwargs:
+            x_name = 'r'
+            x = kwargs[x_name]
 
         # case default: x-axis = S default
         if x is None:
@@ -144,7 +139,7 @@ class Plotter:
             x = self.get_x_axis()[x_name]
 
         # granularity of the axis
-        n = kwargs['n'] if 'n' in kwargs else 100
+        n = kwargs.get('n', 100)
 
         #
         # defining the x-axis
@@ -161,21 +156,14 @@ class Plotter:
                 x_min = max(x - 40, 0.0)
                 x_max = x + 40
 
-        # Case x-axis = sigma or r
         elif x_name in ['sigma', 'r']:
 
             # explicitly ask for x-axis span by 'sigma' or 'r'
             x_axis_dict[x_name + '_axis'] = True
 
             # case 1: a list of x-points in input. The x-axis is a wide range, including x-points
-            if is_iterable(x):
-                x_min = 0.0
-                x_max = 1.5 * max(x)
-            # case 2: a single x-point in input. The x-point is the middle point of the x-axis
-            else:
-                x_min = 0.0
-                x_max = 1.5 * x
-
+            x_max = 1.5 * max(x) if is_iterable(x) else 1.5 * x
+            x_min = 0.0
         # x-axis dictionary filling
         x_axis_dict[x_name] = np.linspace(x_min, x_max, n)
         x_axis_dict['x_axis'] = x_name
@@ -261,29 +249,25 @@ class Plotter:
         """
         Utility method to parse the metrics of the plot: either 'price' or 'PnL'.
         """
-        plot_metrics = kwargs['plot_metrics'] if 'plot_metrics' in kwargs else 'price'
-        return plot_metrics
+        return kwargs.get('plot_metrics', 'price')
 
     def parse_plot_details(self, **kwargs):
         """
         Utility method to decide whether to plot details or not.
         """
-        plot_details = kwargs['plot_details'] if 'plot_details' in kwargs else False
-        return plot_details
+        return kwargs.get('plot_details', False)
 
     def parse_surf_plot(self, **kwargs):
         """
         Utility method to decide whether to plot multi-line or surface.
         """
-        surf_plot = kwargs['surf_plot'] if 'surf_plot' in kwargs else False
-        return surf_plot
+        return kwargs.get('surf_plot', False)
 
     def parse_surf_plot_view(self, **kwargs):
         """
         Utility method to set the elevation and azimutal angles of the surface view.
         """
-        view = kwargs['view'] if 'view' in kwargs else (30, -60)
-        return view
+        return kwargs.get('view', (30, -60))
 
     def make_dense(self, time, n=100):
         """
@@ -499,13 +483,10 @@ class OptionPlotter(Plotter):
 
         # plot the price for different underlying values, one line for each different date
         plt.gca().set_prop_cycle(None)
-        i = 0
-        for iv_at_t in iv.itertuples():
+        for i, iv_at_t in enumerate(iv.itertuples()):
             t = self.fin_inst.time_to_maturity(t=iv_at_t.Index)
             ax.plot(iv.columns, np.repeat(t, repeats=len(iv.columns)), iv_at_t[1:], '-', lw=1.5,
                     label=datetime_obj_to_date_string(iv_at_t.Index), zorder=2 + i)
-            i += 1
-
         # set y ticks
         ax.set_yticks(times_numeric)
         ax.set_yticklabels(time_labels)
@@ -614,9 +595,15 @@ class OptionPlotter(Plotter):
                         zorder=1 + i + 3)
 
             # plot a dot to highlight the strike position and a reference zero line
-            ax.plot(np.array([self.fin_inst.get_K()]), np.array([times_dense_numeric[-1]]), np.array([0.0]), 'k.',
-                    ms=15,
-                    label="Strike $K={}$".format(self.fin_inst.get_K()), zorder=1 + i + 4)
+            ax.plot(
+                np.array([self.fin_inst.get_K()]),
+                np.array([times_dense_numeric[-1]]),
+                np.array([0.0]),
+                'k.',
+                ms=15,
+                label=f"Strike $K={self.fin_inst.get_K()}$",
+                zorder=1 + i + 4,
+            )
             ax.plot(self.fin_inst.get_K() + np.zeros(n_times_dense), times_dense_numeric, np.zeros_like(times_dense),
                     'k--', lw=1.5, zorder=1 + i + 5)
 
@@ -632,7 +619,7 @@ class OptionPlotter(Plotter):
         # set axis labels 
         ax.set_xlabel(x_id, fontsize=12)
         ax.set_ylabel(r"Date" if is_date(times) else r"Time-to-Maturity", fontsize=12)
-        ax.set_zlabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_zlabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)
@@ -720,12 +707,18 @@ class OptionPlotter(Plotter):
                         label=plot_metrics + r" at maturity (" + self.fin_inst.get_docstring('payoff') + r")")
 
             # plot a dot to highlight the strike position and a reference zero line
-            ax.plot(self.fin_inst.get_K(), 0, 'k.', ms=15, label="Strike $K={}$".format(self.fin_inst.get_K()))
+            ax.plot(
+                self.fin_inst.get_K(),
+                0,
+                'k.',
+                ms=15,
+                label=f"Strike $K={self.fin_inst.get_K()}$",
+            )
             ax.plot(x, np.zeros_like(x), 'k--', lw=1.5)
 
         # set axis labels 
         ax.set_xlabel(x_id + r" at different dates", fontsize=12)
-        ax.set_ylabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_ylabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)
@@ -794,12 +787,18 @@ class OptionPlotter(Plotter):
                         label=plot_metrics + r" at maturity(" + self.fin_inst.get_docstring('payoff') + r")")
 
             # plot a dot to highlight the strike position and a reference zero line
-            ax.plot(self.fin_inst.get_K(), 0, 'k.', ms=15, label="Strike $K={}$".format(self.fin_inst.get_K()))
+            ax.plot(
+                self.fin_inst.get_K(),
+                0,
+                'k.',
+                ms=15,
+                label=f"Strike $K={self.fin_inst.get_K()}$",
+            )
             ax.plot(x, np.zeros_like(x), 'k--', lw=1.5)
 
         # set axis labels 
         ax.set_xlabel(x_id + r" at " + time_label, fontsize=12)
-        ax.set_ylabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_ylabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)
@@ -934,24 +933,39 @@ class PortfolioPlotter(Plotter):
         if x_id in ['S', 'K']:
 
             # if defined, plot the red payoff line for different underlying values
-            if not self.fin_inst.is_multi_horizon:
-                # plot the red payoff line for different underlying values
-                if plot_metrics in ['price', 'PnL']:
-                    ax.plot(x, np.repeat(times_dense_numeric[-1], repeats=len(x)), getattr(self.fin_inst, plot_metrics)(
-                        **{x_id: x, 'tau': 0.0, 'sigma_axis': sigma_axis, 'r_axis': r_axis}), 'r-', lw=1.5,
-                            label=plot_metrics + r" at maturity", zorder=1 + i + 3)
+            if not self.fin_inst.is_multi_horizon and plot_metrics in [
+                'price',
+                'PnL',
+            ]:
+                ax.plot(x, np.repeat(times_dense_numeric[-1], repeats=len(x)), getattr(self.fin_inst, plot_metrics)(
+                    **{x_id: x, 'tau': 0.0, 'sigma_axis': sigma_axis, 'r_axis': r_axis}), 'r-', lw=1.5,
+                        label=plot_metrics + r" at maturity", zorder=1 + i + 3)
 
             # plot a dot to highlight the strike(s) position(s) and a reference zero line
             if self.fin_inst.is_multi_strike:
                 for K in self.fin_inst.get_K():
-                    ax.plot(np.array([K]), np.array([times_dense_numeric[-1]]), np.array([0.0]), 'k.', ms=15,
-                            label="Strike $K={}$".format(K), zorder=1 + i + 4)
+                    ax.plot(
+                        np.array([K]),
+                        np.array([times_dense_numeric[-1]]),
+                        np.array([0.0]),
+                        'k.',
+                        ms=15,
+                        label=f"Strike $K={K}$",
+                        zorder=1 + i + 4,
+                    )
                     ax.plot(K + np.zeros(n_times_dense), times_dense_numeric, np.zeros_like(times_dense), 'k--', lw=1.5,
                             zorder=1 + i + 5)
             else:
                 K = self.fin_inst.get_K()
-                ax.plot(np.array([K]), np.array([times_dense_numeric[-1]]), np.array([0.0]), 'k.', ms=15,
-                        label="Strike $K={}$".format(K), zorder=1 + i + 4)
+                ax.plot(
+                    np.array([K]),
+                    np.array([times_dense_numeric[-1]]),
+                    np.array([0.0]),
+                    'k.',
+                    ms=15,
+                    label=f"Strike $K={K}$",
+                    zorder=1 + i + 4,
+                )
                 ax.plot(K + np.zeros(n_times_dense), times_dense_numeric, np.zeros_like(times_dense), 'k--', lw=1.5,
                         zorder=1 + i + 5)
 
@@ -967,7 +981,7 @@ class PortfolioPlotter(Plotter):
         # set axis labels 
         ax.set_xlabel(x_id, fontsize=12)
         ax.set_ylabel(r"Date" if is_date(times) else r"Time-to-Maturity", fontsize=12)
-        ax.set_zlabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_zlabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)
@@ -1047,20 +1061,28 @@ class PortfolioPlotter(Plotter):
         if x_id in ['S', 'K']:
 
             # if defined, plot the red payoff line for different underlying values
-            if not self.fin_inst.is_multi_horizon:
-                if plot_metrics in ['price', 'PnL']:
-                    ax.plot(x, getattr(self.fin_inst, plot_metrics)(
-                        **{x_id: x, 'tau': 0.0, 'sigma_axis': sigma_axis, 'r_axis': r_axis}), 'r-', lw=1.5,
-                            label=plot_metrics + r" at maturity")
+            if not self.fin_inst.is_multi_horizon and plot_metrics in [
+                'price',
+                'PnL',
+            ]:
+                ax.plot(x, getattr(self.fin_inst, plot_metrics)(
+                    **{x_id: x, 'tau': 0.0, 'sigma_axis': sigma_axis, 'r_axis': r_axis}), 'r-', lw=1.5,
+                        label=plot_metrics + r" at maturity")
 
             # plot a dot to highlight the strike position and a reference zero line
             strikes = self.fin_inst.get_K()
-            ax.plot(strikes, np.zeros_like(strikes), 'k.', ms=15, label="Strikes $K={}$".format(strikes))
+            ax.plot(
+                strikes,
+                np.zeros_like(strikes),
+                'k.',
+                ms=15,
+                label=f"Strikes $K={strikes}$",
+            )
             ax.plot(x, np.zeros_like(x), 'k--', lw=1.5)
 
         # set axis labels 
         ax.set_xlabel(x_id + r" at different dates", fontsize=12)
-        ax.set_ylabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_ylabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)
@@ -1138,12 +1160,18 @@ class PortfolioPlotter(Plotter):
 
             # plot a dot to highlight the strike position and a reference zero line
             strikes = self.fin_inst.get_K()
-            ax.plot(strikes, np.zeros_like(strikes), 'k.', ms=15, label="Strikes $K={}$".format(strikes))
+            ax.plot(
+                strikes,
+                np.zeros_like(strikes),
+                'k.',
+                ms=15,
+                label=f"Strikes $K={strikes}$",
+            )
             ax.plot(x, np.zeros_like(x), 'k--', lw=1.5)
 
         # set axis labels 
         ax.set_xlabel(x_id + r" at " + time_label, fontsize=12)
-        ax.set_ylabel('Black-Scholes {}'.format(plot_metrics), fontsize=12)
+        ax.set_ylabel(f'Black-Scholes {plot_metrics}', fontsize=12)
 
         # set title
         ax.set_title(plot_metrics + " of a " + self.get_title(), fontsize=12)

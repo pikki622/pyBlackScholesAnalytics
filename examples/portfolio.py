@@ -27,15 +27,14 @@ def get_time_parameter(mkt_env, end_date, periods, kind='date', multi_horizon_pt
 
         # a date-range of 5 valuation dates between t and the nearest maturity
         t = pd.date_range(start=mkt_env.get_t(), end=end_date, periods=periods)
-        print("t ([t...T] pd.date_range): {}\n".format(t))
+        print(f"t ([t...T] pd.date_range): {t}\n")
 
     else:
 
         if multi_horizon_ptf:
             raise TypeError("No time-to-maturity time parameter allowed for multi-horizon portfolio")
-        else:
-            t = np.array([0.1 * (1 + i) for i in range(periods)])
-            print("t (list of times-to-maturity): {}\n".format(t))
+        t = np.array([0.1 * (1 + i) for i in range(periods)])
+        print(f"t (list of times-to-maturity): {t}\n")
 
     return t
 
@@ -54,7 +53,7 @@ def main():
 
     # underlying values to test
     S_vector = [60, 90, 120]
-    print("S_vector: {}\n".format(S_vector))
+    print(f"S_vector: {S_vector}\n")
 
     # options maturities
     T_call = "31-12-2020"
@@ -103,18 +102,18 @@ def main():
     for metrics in ["price", "PnL", "delta", "theta", "gamma", "vega", "rho"]:
         # portfolio metrics
         ptf_metrics = getattr(ptf, metrics)(S=S_vector, t=t_range, np_output=np_output)
-        print("\nPortfolio {}:\n{}".format(metrics, ptf_metrics))
+        print(f"\nPortfolio {metrics}:\n{ptf_metrics}")
 
         # verification with benchmark metrics
         call_metrics = getattr(call, metrics)(S=S_vector, t=t_range, np_output=np_output)
         benchmark_metrics = call_pos * call_metrics
-        print("\nBenchmark {}:\n{}".format(metrics, benchmark_metrics))
+        print(f"\nBenchmark {metrics}:\n{benchmark_metrics}")
 
         # check effective match
         diff = (ptf_metrics - benchmark_metrics).astype('float')
         num_nonzero_diff = np.count_nonzero(diff) - np.isnan(diff).sum().sum()
-        exact_match = True if num_nonzero_diff == 0 else False
-        print("\nIs replication exact (NaN excluded)? {}\n".format(exact_match))
+        exact_match = num_nonzero_diff == 0
+        print(f"\nIs replication exact (NaN excluded)? {exact_match}\n")
 
     #
     # Step 2: adding 5 short plain-vanilla put contracts
@@ -132,19 +131,19 @@ def main():
     for metrics in ["price", "PnL", "delta", "theta", "gamma", "vega", "rho"]:
         # portfolio metrics
         ptf_metrics = getattr(ptf, metrics)(S=S_vector, t=t_range, np_output=np_output)
-        print("\nPortfolio {}:\n{}".format(metrics, ptf_metrics))
+        print(f"\nPortfolio {metrics}:\n{ptf_metrics}")
 
         # verification with benchmark metrics
         call_metrics = getattr(call, metrics)(S=S_vector, t=t_range, np_output=np_output)
         put_metrics = getattr(put, metrics)(S=S_vector, t=t_range, np_output=np_output)
         benchmark_metrics = call_pos * call_metrics + put_pos * put_metrics
-        print("\nBenchmark {}:\n{}".format(metrics, benchmark_metrics))
+        print(f"\nBenchmark {metrics}:\n{benchmark_metrics}")
 
         # check effective match
         diff = (ptf_metrics - benchmark_metrics).astype('float')
         num_nonzero_diff = np.count_nonzero(diff) - np.isnan(diff).sum().sum()
-        exact_match = True if num_nonzero_diff == 0 else False
-        print("\nIs replication exact (NaN excluded)? {}\n".format(exact_match))
+        exact_match = num_nonzero_diff == 0
+        print(f"\nIs replication exact (NaN excluded)? {exact_match}\n")
 
 
 # ----------------------------- usage example ---------------------------------#

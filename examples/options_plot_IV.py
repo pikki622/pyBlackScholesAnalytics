@@ -77,11 +77,11 @@ def main():
                   "np_output": np_output}
 
     print("Parameters:")
-    print("S: {}".format(param_dict["S"]))
-    print("K: {}".format(param_dict["K"]))
-    print("t: {}".format(param_dict["t"]))
-    print("sigma: \n{}".format(param_dict["sigma"]))
-    print("r: {}\n".format(param_dict["r"]))
+    print(f'S: {param_dict["S"]}')
+    print(f'K: {param_dict["K"]}')
+    print(f't: {param_dict["t"]}')
+    print(f'sigma: \n{param_dict["sigma"]}')
+    print(f'r: {param_dict["r"]}\n')
 
     # expected implied volatility: is the 'sigma' parameter with which the 
     # target price has been generated

@@ -88,7 +88,7 @@ class Portfolio:
         self.__composition = []
 
         # initialize empty info strings
-        self.__info = "{} Portfolio: \n".format(name)
+        self.__info = f"{name} Portfolio: \n"
         self.__mkt_info = None
 
         # initialize valuation date, underlying value, strikes and times-to-maturity attributes
@@ -166,7 +166,9 @@ class Portfolio:
             self.is_empty = False
 
         long_short = 'Long' if position > 0 else 'Short'
-        instrument_info = long_short + " {} ".format(abs(position)) + FinancialInstrument.get_info()
+        instrument_info = (
+            f"{long_short} {abs(position)} {FinancialInstrument.get_info()}"
+        )
 
         self.__composition.append({"instrument": FinancialInstrument,
                                    "position": position,
@@ -196,11 +198,10 @@ class Portfolio:
     def __update_t(self, fin_inst):
         if self.get_t() is None:
             self.set_t(fin_inst.get_t())
-        else:
-            if self.get_t() != fin_inst.get_t():
-                raise ValueError(
-                    "No multiple valuation dates in input allowed: \n\n current: {}, \n\n other given input: {}"
-                    .format(self, self.get_t(), fin_inst.get_t()))
+        elif self.get_t() != fin_inst.get_t():
+            raise ValueError(
+                f"No multiple valuation dates in input allowed: \n\n current: {self}, \n\n other given input: {self.get_t()}"
+            )
 
     def __update_T(self, fin_inst):
         expiration_dates = np.append(self.get_T(), fin_inst.get_T())
@@ -240,8 +241,9 @@ class Portfolio:
         self.__tau = np.unique(times_to_maturity)
         # consistency check
         if (len(self.__tau) > 1) and (not self.is_multi_horizon):
-            raise AttributeError("Multi-horizon portfolio not properly handled: \n \tau = {}"
-                                 .format(self.__tau))
+            raise AttributeError(
+                f"Multi-horizon portfolio not properly handled: \n \tau = {self.__tau}"
+            )
 
     def check_parameters(self, *args, **kwargs):
         """Check both x-axis and time dimensional parameters."""
@@ -257,7 +259,7 @@ class Portfolio:
         which is not well defined."""
 
         # x-axis parameter:
-        strike = kwargs['K'] if 'K' in kwargs else None
+        strike = kwargs.get('K')
 
         if self.is_multi_strike and strike is not None:
             raise NotImplementedError("No 'strike' x-axis parameter allowed for multi-strike portfolio.")
@@ -267,18 +269,19 @@ class Portfolio:
         which is not well defined."""
 
         # time parameter:
-        time_param = args[1] if len(args) > 1 \
-            else kwargs['tau'] if 'tau' in kwargs \
-            else (kwargs['t'] if 't' in kwargs else None)
+        time_param = (
+            args[1] if len(args) > 1 else kwargs.get('tau', kwargs.get('t', None))
+        )
 
         # Case of no time parameter in input allowed: sigma x r grid case
-        if time_param is not None:
-
-            # check that time parameter is not a time-to-maturity if the portfolio is multi-horizon:
-            if self.is_multi_horizon and is_numeric(time_param):
-                raise TypeError(
-                    "No time-to-maturity time parameter allowed for multi-horizon portfolio: \n\n tau={} given in input"
-                    .format(time_param))
+        if (
+            time_param is not None
+            and self.is_multi_horizon
+            and is_numeric(time_param)
+        ):
+            raise TypeError(
+                f"No time-to-maturity time parameter allowed for multi-horizon portfolio: \n\n tau={time_param} given in input"
+            )
 
                 #
 
@@ -312,7 +315,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio payoff is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].payoff(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].payoff(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def price(self, *args, **kwargs):
         """
@@ -327,7 +333,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio price is the sum position * instrument_price
-        return sum([inst["position"] * inst["instrument"].price(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].price(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def PnL(self, *args, **kwargs):
         """
@@ -342,7 +351,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio P&L is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].PnL(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].PnL(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def delta(self, *args, **kwargs):
         """
@@ -357,7 +369,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio delta is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].delta(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].delta(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def theta(self, *args, **kwargs):
         """
@@ -372,7 +387,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio theta is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].theta(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].theta(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def gamma(self, *args, **kwargs):
         """
@@ -387,7 +405,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio gamma is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].gamma(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].gamma(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def vega(self, *args, **kwargs):
         """
@@ -402,7 +423,10 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio vega is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].vega(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].vega(*args, **kwargs)
+            for inst in self.get_composition()
+        )
 
     def rho(self, *args, **kwargs):
         """
@@ -417,4 +441,7 @@ class Portfolio:
         self.check_parameters(*args, **kwargs)
 
         # portfolio rho is the sum position * instrument_payoff
-        return sum([inst["position"] * inst["instrument"].rho(*args, **kwargs) for inst in self.get_composition()])
+        return sum(
+            inst["position"] * inst["instrument"].rho(*args, **kwargs)
+            for inst in self.get_composition()
+        )

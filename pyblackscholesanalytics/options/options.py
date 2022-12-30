@@ -120,7 +120,7 @@ class EuropeanOption:
 
         # option type check
         if option_type not in ['call', 'put']:
-            raise NotImplementedError("Option Type: '{}' does not exist!".format(option_type))
+            raise NotImplementedError(f"Option Type: '{option_type}' does not exist!")
 
         self.__type = option_type
         self.__S = mkt_env.get_S()
@@ -186,7 +186,7 @@ class EuropeanOption:
 
         # option type check
         if option_type not in ['call', 'put']:
-            raise NotImplementedError("Option Type: '{}' does not exist!".format(option_type))
+            raise NotImplementedError(f"Option Type: '{option_type}' does not exist!")
 
     def set_K(self, K):
         self.__K = K
@@ -221,7 +221,7 @@ class EuropeanOption:
         """
 
         # parsing optional parameters
-        t = args[0] if len(args) > 0 else kwargs['t'] if 't' in kwargs else self.get_t()
+        t = args[0] if args else kwargs['t'] if 't' in kwargs else self.get_t()
         T = args[1] if len(args) > 1 else kwargs['T'] if 'T' in kwargs else self.get_T()
 
         # convert to dt.datetime objects, if needed
@@ -241,31 +241,31 @@ class EuropeanOption:
         # Parsing input parameters 
         # 
 
-        # underlying value 
-        S = args[0] if len(args) > 0 else kwargs['S'] if 'S' in kwargs else self.get_S()
+        # underlying value
+        S = args[0] if args else kwargs['S'] if 'S' in kwargs else self.get_S()
 
         # strike price
         K = kwargs['K'] if 'K' in kwargs else self.get_K()
 
         # time parameter:
-        time_param = args[1] if len(args) > 1 \
-            else kwargs['tau'] if 'tau' in kwargs \
-            else (kwargs['t'] if 't' in kwargs else None)
+        time_param = (
+            args[1] if len(args) > 1 else kwargs.get('tau', kwargs.get('t', None))
+        )
 
         # underlying volatility 
         sigma = kwargs['sigma'] if 'sigma' in kwargs else self.get_sigma()
 
         # span the x-axis with volatility values if True, otherwise distribute its values
-        sigma_axis = kwargs['sigma_axis'] if 'sigma_axis' in kwargs else False
+        sigma_axis = kwargs.get('sigma_axis', False)
 
         # short rate
         r = kwargs['r'] if 'r' in kwargs else self.get_r()
 
         # span the x-axis with short-rate values if True, otherwise distribute its values
-        r_axis = kwargs['r_axis'] if 'r_axis' in kwargs else False
+        r_axis = kwargs.get('r_axis', False)
 
         # squeeze output flag
-        np_output = kwargs['np_output'] if 'np_output' in kwargs else True
+        np_output = kwargs.get('np_output', True)
 
         #
         # Iterable parameters check
@@ -304,8 +304,9 @@ class EuropeanOption:
         #
 
         if iterable_S and iterable_K:
-            raise NotImplementedError("Just one between 'S' and 'K' parameters allowed to be iterable."
-                                      " Both iterable given in input:\nS={}\nK={}".format(S, K))
+            raise NotImplementedError(
+                f"Just one between 'S' and 'K' parameters allowed to be iterable. Both iterable given in input:\nS={S}\nK={K}"
+            )
 
         # flag for iterability of S or K
         iterable_S_or_K = iterable_S or iterable_K
@@ -331,20 +332,11 @@ class EuropeanOption:
         if sigma_axis and r_axis:
             raise NotImplementedError("x-axis cannot be spanned simultaneously by sigma and r")
 
-        # 
-        # Checking that if S/K are iterables and sigma is vector, then sigma_axis == False
-        #
-
-        if iterable_S_or_K and iterable_sigma:
-            if sigma_axis:
+        if iterable_S_or_K:
+            if iterable_sigma and sigma_axis:
                 raise NotImplementedError("x-axis already spanned by S/K, cannot be spanned by sigma.")
 
-        # 
-        # Checking that if S/K are iterables and r is vector, then r_axis == False
-        #
-
-        if iterable_S_or_K and iterable_r:
-            if r_axis:
+            if iterable_r and r_axis:
                 raise NotImplementedError("x-axis already spanned by S/K, cannot be spanned by r.")
 
         #
@@ -360,7 +352,7 @@ class EuropeanOption:
 
         # checking whether any value in S is smaller than zero. Works if S is scalar too.
         if np.any(S < 0):
-            warnings.warn("Warning: S = {} < 0 value encountered".format(S))
+            warnings.warn(f"Warning: S = {S} < 0 value encountered")
 
         # 
         # 2) Strike price
@@ -371,7 +363,7 @@ class EuropeanOption:
 
         # checking whether any value in K is smaller than zero. Works if K is scalar too.
         if np.any(K <= 0):
-            warnings.warn("Warning: K = {} <= 0 value encountered".format(K))
+            warnings.warn(f"Warning: K = {K} <= 0 value encountered")
 
         # 
         # 3) Time parameter
@@ -383,22 +375,21 @@ class EuropeanOption:
         # case 1: no time-parameter in input
         if time_param is None:
             tau = time_param = self.get_tau()
-        # case 2: valid time-to-maturity in input
         elif is_numeric(time_param):
             time_param = homogenize(time_param, reverse_order=True)
             tau = time_param
-        # case 3: valuation date in input, to be converted into time-to-maturity
         elif is_date(time_param):
             time_name = "t"
             time_param = homogenize(time_param, sort_func=date_string_to_datetime_obj)
             tau = self.time_to_maturity(t=time_param)
-        # error case: the time parameter in input has a data-type that is not recognized
         else:
-            raise TypeError("Type {} of input time parameter not recognized".format(type(time_param)))
+            raise TypeError(
+                f"Type {type(time_param)} of input time parameter not recognized"
+            )
 
         # checking whether any value in tau is smaller than zero. Works if tau is scalar too.
         if np.any(tau < 0):
-            warnings.warn("Warning: tau = {} < 0 value encountered".format(tau))
+            warnings.warn(f"Warning: tau = {tau} < 0 value encountered")
 
         # 
         # 4) Underlying volatility
@@ -410,7 +401,7 @@ class EuropeanOption:
         # We allow for deterministic dynamics (sigma==0), but we raise a warning anyway
         # if any value of sigma is smaller-or-equal than zero. Works if sigma is scalar too.
         if np.any(sigma <= 0):
-            warnings.warn("Warning: sigma = {} <= 0 value encountered".format(sigma))
+            warnings.warn(f"Warning: sigma = {sigma} <= 0 value encountered")
 
         # 
         # 5) Short-rate
@@ -422,7 +413,7 @@ class EuropeanOption:
         # We allow for negative short rate, but we raise a warning anyway 
         # if any value in r is smaller than zero. Works if r is scalar too.
         if np.any(r < 0):
-            warnings.warn("Warning: r = {} < 0 value encountered".format(r))
+            warnings.warn(f"Warning: r = {r} < 0 value encountered")
 
         #
         # Coordinate parameters
@@ -440,24 +431,15 @@ class EuropeanOption:
                                       np_output=np_output,
                                       col_labels=S, ind_labels=time_param)
 
-        # Case 1: S (or K) and/or tau iterable parameters
-        #
-        # Make x-axis spanned by S, K, sigma or r, creating a (x-axis,time) 
-        # grid if both are iterable. Parameters sigma and r are either 
-        # distributed along the other(s) axes (shape-match is required) or can 
-        # span be used to span the x-axis too (sigma_axis or r_axis flags must 
-        # be set to True)
         elif iterable_S_or_K or iterable_tau:
 
-            scalar_params = {}
             vector_params = {}
 
             # x-axis default setup            
             x = S
             x_name = "S"
             x_col = S
-            scalar_params["K"] = K
-
+            scalar_params = {"K": K}
             if iterable_sigma:
                 if sigma_axis:
                     x = sigma
@@ -494,8 +476,7 @@ class EuropeanOption:
                                       np_output=np_output,
                                       col_labels=x_col, ind_labels=time_param)
 
-            # Case 2: sigma and/or r are iterable 1-dim vectors 
-        #         and S, K and tau are both scalar
+                # Case 2: sigma and/or r are iterable 1-dim vectors 
         elif iterable_sigma or iterable_r:
 
             # case 2.1: sigma and r are iterable 1-dim vectors
@@ -510,9 +491,6 @@ class EuropeanOption:
                                           col_labels=sigma, ind_labels=r)
 
                 # case 2.2: sigma is a 1-dim vector and r is scalar
-            #
-            # make sigma and tau coordinated np.ndarray or pd.DataFrames
-            # and S, K and r coordinated accordingly
             elif iterable_sigma:
                 coord_params = coordinate(x=sigma, y=tau,
                                           x_name="sigma", y_name=time_name,
@@ -521,10 +499,7 @@ class EuropeanOption:
                                           col_labels=sigma, ind_labels=time_param)
 
                 # case 2.3: r is a 1-dim vector and sigma is scalar
-            #
-            # make r and tau coordinated np.ndarray or pd.DataFrames
-            # and S, K and sigma coordinated accordingly
-            elif iterable_r:
+            else:
                 coord_params = coordinate(x=r, y=tau,
                                           x_name="r", y_name=time_name,
                                           others_scalar={"S": S, "K": K, "sigma": sigma},
@@ -545,7 +520,7 @@ class EuropeanOption:
         """
 
         # parsing optional parameters
-        S = args[0] if len(args) > 0 else kwargs['S'] if 'S' in kwargs else self.get_S()
+        S = args[0] if args else kwargs['S'] if 'S' in kwargs else self.get_S()
         tau = args[1] if len(args) > 1 else kwargs['tau'] if 'tau' in kwargs else self.get_tau()
         K = args[2] if len(args) > 2 else kwargs['K'] if 'K' in kwargs else self.get_K()
         r = args[3] if len(args) > 3 else kwargs['r'] if 'r' in kwargs else self.get_r()
@@ -883,17 +858,17 @@ class EuropeanOption:
             min_method = 'trf'
 
             # tolerance for termination by the change of the cost function
-            cost_tolerance = kwargs["cost_tolerance"] if "cost_tolerance" in kwargs else 1e-12
+            cost_tolerance = kwargs.get("cost_tolerance", 1e-12)
 
             # tolerance for termination by the change of the solution found
-            sol_tolerance = kwargs["sol_tolerance"] if "sol_tolerance" in kwargs else 1e-12
+            sol_tolerance = kwargs.get("sol_tolerance", 1e-12)
 
             # optimization
             res = sc_opt.least_squares(fun=f, x0=iv0, bounds=iv_bounds, method=min_method,
                                        ftol=cost_tolerance, xtol=sol_tolerance)
 
             # output message
-            print("\nTermination message: " + res.message + " Success? {}".format(res.success))
+            print("\nTermination message: " + res.message + f" Success? {res.success}")
 
             # optimal iv found
             iv_np1 = res.x
@@ -960,7 +935,7 @@ class EuropeanOption:
         r = param_dict["r"]
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 1.0 / 365.0
+        rescaling_factor = kwargs.get("factor", 1.0 / 365.0)
 
         # call case
         if self.get_type() == 'call':
@@ -1024,7 +999,7 @@ class EuropeanOption:
         r = param_dict["r"]
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 0.01
+        rescaling_factor = kwargs.get("factor", 0.01)
 
         # call case
         if self.get_type() == 'call':
@@ -1059,7 +1034,7 @@ class EuropeanOption:
         r = param_dict["r"]
 
         # rescaling factor
-        rescaling_factor = kwargs["factor"] if "factor" in kwargs else 0.01
+        rescaling_factor = kwargs.get("factor", 0.01)
 
         # call case
         if self.get_type() == 'call':
@@ -1261,10 +1236,9 @@ class PlainVanillaOption(EuropeanOption):
         # get d1 and d2 terms
         d1, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute price
-        price = S * stats.norm.cdf(d1, 0.0, 1.0) - K * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
-
-        return price
+        return S * stats.norm.cdf(d1, 0.0, 1.0) - K * np.exp(
+            -r * tau
+        ) * stats.norm.cdf(d2, 0.0, 1.0)
 
     def put_price(self, S, K, tau, sigma, r):
         """ Plain-Vanilla put option price from Put-Call parity relation: Call + Ke^{-r*tau} = Put + S"""
@@ -1296,11 +1270,9 @@ class PlainVanillaOption(EuropeanOption):
         # get d1 and d2 terms
         d1, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute theta
-        theta = - (S * sigma * stats.norm.pdf(d1, 0.0, 1.0) / (2.0 * np.sqrt(tau))) - r * K * np.exp(
-            -r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
-
-        return theta
+        return -(
+            S * sigma * stats.norm.pdf(d1, 0.0, 1.0) / (2.0 * np.sqrt(tau))
+        ) - r * K * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
 
     def put_theta(self, S, K, tau, sigma, r):
         """"Plain-Vanilla put option Theta """
@@ -1308,11 +1280,9 @@ class PlainVanillaOption(EuropeanOption):
         # get d1 and d2 terms
         d1, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute theta
-        theta = - (S * sigma * stats.norm.pdf(d1, 0.0, 1.0) / (2.0 * np.sqrt(tau))) + r * K * np.exp(
-            -r * tau) * stats.norm.cdf(-d2, 0.0, 1.0)
-
-        return theta
+        return -(
+            S * sigma * stats.norm.pdf(d1, 0.0, 1.0) / (2.0 * np.sqrt(tau))
+        ) + r * K * np.exp(-r * tau) * stats.norm.cdf(-d2, 0.0, 1.0)
 
     def call_gamma(self, S, K, tau, sigma, r):
         """"Plain-Vanilla call option Gamma """
@@ -1320,10 +1290,7 @@ class PlainVanillaOption(EuropeanOption):
         # get d1 term
         d1, _ = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute gamma
-        gamma = stats.norm.pdf(d1, 0.0, 1.0) / (S * sigma * np.sqrt(tau))
-
-        return gamma
+        return stats.norm.pdf(d1, 0.0, 1.0) / (S * sigma * np.sqrt(tau))
 
     def put_gamma(self, S, K, tau, sigma, r):
         """"Plain-Vanilla put option Gamma """
@@ -1336,10 +1303,7 @@ class PlainVanillaOption(EuropeanOption):
         # get d1 term
         d1, _ = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute vega
-        vega = S * np.sqrt(tau) * stats.norm.pdf(d1, 0.0, 1.0)
-
-        return vega
+        return S * np.sqrt(tau) * stats.norm.pdf(d1, 0.0, 1.0)
 
     def put_vega(self, S, K, tau, sigma, r):
         """Plain-Vanilla put option vega """
@@ -1352,10 +1316,7 @@ class PlainVanillaOption(EuropeanOption):
         # get d2 term
         _, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute rho
-        rho = tau * K * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
-
-        return rho
+        return tau * K * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
 
     def put_rho(self, S, K, tau, sigma, r):
         """Plain-Vanilla put option Rho """
@@ -1363,10 +1324,7 @@ class PlainVanillaOption(EuropeanOption):
         # get d2 term
         _, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute rho
-        rho = - tau * K * np.exp(-r * tau) * stats.norm.cdf(-d2, 0.0, 1.0)
-
-        return rho
+        return - tau * K * np.exp(-r * tau) * stats.norm.cdf(-d2, 0.0, 1.0)
 
 
 # -----------------------------------------------------------------------------#
@@ -1553,10 +1511,7 @@ class DigitalOption(EuropeanOption):
         # get d2 term
         _, d2 = self.d1_and_d2(S=S, K=K, tau=tau, sigma=sigma, r=r)
 
-        # compute price
-        price = Q * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
-
-        return price
+        return Q * np.exp(-r * tau) * stats.norm.cdf(d2, 0.0, 1.0)
 
     def put_price(self, S, K, tau, sigma, r):
         """ CON put option price from Put-Call parity relation: CON_Call + CON_Put = Qe^{-r*tau}"""

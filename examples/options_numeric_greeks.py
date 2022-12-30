@@ -58,18 +58,19 @@ def greeks_title_factory(ObjWithGreeksMethod, greek_type, underlying="S"):
     # plot common title
     common_title = ObjWithGreeksMethod.get_info() + "\n" + "Market at emission: " + ObjWithGreeksMethod.get_mkt_info()
 
-    title_dispatcher = {"delta": r"$\Delta(" + underlying + ")$",
-                        "theta": r"$\Theta(" + underlying + ")$",
-                        "gamma": r"$\Gamma(" + underlying + ")$",
-                        "vega": r"$Vega(" + underlying + ")$",
-                        "rho": r"$\rho(" + underlying + ")$",
-                        }
+    title_dispatcher = {
+        "delta": r"$\Delta(" + underlying + ")$",
+        "theta": r"$\Theta(" + underlying + ")$",
+        "gamma": r"$\Gamma(" + underlying + ")$",
+        "vega": f"$Vega({underlying})$",
+        "rho": r"$\rho(" + underlying + ")$",
+    }
 
-    # plot title
-    plot_title = r"Numeric " + greek_type + " " + title_dispatcher[
-        greek_type] + " Vs $" + underlying + "$ for a \n" + common_title
-
-    return plot_title
+    return (
+        f"Numeric {greek_type} {title_dispatcher[greek_type]} Vs ${underlying}"
+        + "$ for a \n"
+        + common_title
+    )
 
 
 def main():

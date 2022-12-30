@@ -59,18 +59,19 @@ def greeks_title_factory(ObjWithGreeksMethod, greek_type, underlying="S"):
     # plot common title
     common_title = ObjWithGreeksMethod.get_info() + "\n" + "Market at emission: " + ObjWithGreeksMethod.get_mkt_info()
 
-    title_dispatcher = {"delta": r"$\Delta(" + underlying + ")$",
-                        "theta": r"$\Theta(" + underlying + ")$",
-                        "gamma": r"$\Gamma(" + underlying + ")$",
-                        "vega": r"$Vega(" + underlying + ")$",
-                        "rho": r"$\rho(" + underlying + ")$",
-                        }
+    title_dispatcher = {
+        "delta": r"$\Delta(" + underlying + ")$",
+        "theta": r"$\Theta(" + underlying + ")$",
+        "gamma": r"$\Gamma(" + underlying + ")$",
+        "vega": f"$Vega({underlying})$",
+        "rho": r"$\rho(" + underlying + ")$",
+    }
 
-    # plot title
-    plot_title = r"Comparison of Numeric and Exact " + greek_type + " " + title_dispatcher[
-        greek_type] + " Vs $" + underlying + "$ for a \n" + common_title
-
-    return plot_title
+    return (
+        f"Comparison of Numeric and Exact {greek_type} {title_dispatcher[greek_type]} Vs ${underlying}"
+        + "$ for a \n"
+        + common_title
+    )
 
 
 def main():
@@ -112,10 +113,17 @@ def main():
         plot_title_S = greeks_title_factory(option, greek_type)
 
         # comparison
-        plot_compare(S_range, f=greek_numeric_Vs_S, f_ref=greek_analytic_Vs_S,
-                     f_label=label_numeric_S, f_ref_label=label_analytic_S,
-                     x_label="S", f_test_name="Numeric " + greek_type,
-                     f_ref_name="Exact " + greek_type, title=plot_title_S)
+        plot_compare(
+            S_range,
+            f=greek_numeric_Vs_S,
+            f_ref=greek_analytic_Vs_S,
+            f_label=label_numeric_S,
+            f_ref_label=label_analytic_S,
+            x_label="S",
+            f_test_name=f"Numeric {greek_type}",
+            f_ref_name=f"Exact {greek_type}",
+            title=plot_title_S,
+        )
 
         #
         # greek Vs residual time to maturity tau
@@ -141,10 +149,17 @@ def main():
         plot_title_tau = greeks_title_factory(option, greek_type, underlying=r"\tau")
 
         # comparison
-        plot_compare(tau_range, f=greek_numeric_Vs_tau, f_ref=greek_analytic_Vs_tau,
-                     f_label=label_numeric_tau, f_ref_label=label_analytic_tau,
-                     x_label=r"\tau", f_test_name="Numeric " + greek_type,
-                     f_ref_name="Exact " + greek_type, title=plot_title_tau)
+        plot_compare(
+            tau_range,
+            f=greek_numeric_Vs_tau,
+            f_ref=greek_analytic_Vs_tau,
+            f_label=label_numeric_tau,
+            f_ref_label=label_analytic_tau,
+            x_label=r"\tau",
+            f_test_name=f"Numeric {greek_type}",
+            f_ref_name=f"Exact {greek_type}",
+            title=plot_title_tau,
+        )
 
 
 # ----------------------------- usage example ---------------------------------#
